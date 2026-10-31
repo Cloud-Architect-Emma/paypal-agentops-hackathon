@@ -1,58 +1,39 @@
-# PayPal AgentOps — Control Plane for Trusted Agentic Commerce
+# PayPal AgentOps — Trusted Agentic Commerce
 
-**Hackathon demonstration / simulation only.** No money moves; no PayPal API calls occur in this repository.
+**Live app:** https://paypal-agentops-hackathon-eksknbyjh7w4vc8cjb9yiy.streamlit.app/  
+**GitHub:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon  
+**Demo script:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon/blob/main/DEMO_SCRIPT.md
 
-## Project links
-- **Live demo:** https://paypal-agentops-hackathon-eksknbyjh7w4vc8cjb9yiy.streamlit.app/
-- **GitHub repository:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon
-- **Recording guide:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon/blob/main/DEMO_SCRIPT.md
-- **Submission details:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon/blob/main/SUBMISSION_COPY.md
+## Features
+- Buyer policy gate, merchant allowlist, spending limit, explicit human consent, session-based audit log.
+- **Optional live OpenAI Responses API** for purchase suggestion drafting; its output cannot authorize a transaction.
+- **Optional live PayPal sandbox Orders v2 API** for *read-only retrieval* of an existing sandbox order status, authenticated with OAuth2.
+- **Payment execution remains disabled**: no create-order, authorization, capture, refunds, or transfers. No live payment environment.
 
-## Problem
-AI shopping agents can initiate purchases, but buyers and operators need transparent policy gates, explicit consent, and auditable decisions before any payment execution.
+## Enable external integrations
+In Streamlit Community Cloud, open the app → Settings → Secrets and enter your **own** credentials (never commit them to GitHub):
 
-## Demo
-1. Propose a £49.99 purchase from **Office Supplies** with a £100 spending limit.
-2. See a policy pass and explicit buyer approval requirement.
-3. Approve the proposal and inspect the simulated outcome and audit timeline.
-4. Propose a £150 purchase to see an automatic spending-limit block.
-5. Propose £30 at **Unknown Merchant** to see a merchant-policy block.
+```toml
+OPENAI_API_KEY = "<your OpenAI API key>"
+PAYPAL_SANDBOX_CLIENT_ID = "<your sandbox client ID>"
+PAYPAL_SANDBOX_CLIENT_SECRET = "<your sandbox client secret>"
+```
 
-## Run locally
+The app runs without secrets, but external integrations remain disabled until configured. Use an existing sandbox order ID from your separate development tests to demonstrate read-only PayPal lookup. AI generation may incur API costs.
+
+## Run and test
 ```bash
 python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
 python -m streamlit run app.py
 ```
 
-## Public deployment
-The Streamlit application is live at https://paypal-agentops-hackathon-eksknbyjh7w4vc8cjb9yiy.streamlit.app/. It deploys from branch `main` with entrypoint `app.py`. No secrets are required.
-
 ## Architecture
-```text
-Simulated AI agent proposal
-          |
-          v
-  AgentOps policy evaluation ----- blocked -----> audit trail
-          |
-          v
- Explicit buyer decision --------- rejected ----> audit trail
-          |
-          v
- Simulated approval (NO PAYMENT EXECUTION) -----> audit trail
-```
+AI request → OpenAI draft (optional) → human-entered purchase proposal → deterministic policy → buyer consent → **simulated approval only** → session audit. Separately, read-only PayPal sandbox order status lookup is available for an existing order. The sandbox lookup does **not** execute the proposed purchase.
 
-## Security and scope
-- No Firebase or PayPal dependency; no API credentials.
-- No real AI agent or PayPal calls; purchase requests are simulated UI inputs.
-- All transaction state is held in a single Streamlit session and is not persistent.
-- Policy logic is deterministic and intentionally simplified; not production-grade authorization.
-- Existing full AgentOps backend and database are **not** part of this demo repository.
-- Do not claim real payment execution, real AI agent integration, or immutable audit persistence.
-
-## Tests
-```bash
-python -m unittest discover -s tests -v
-```
-
-## Submission assets
-See `DEMO_SCRIPT.md` and `SUBMISSION_COPY.md`.
+## Security and limitations
+- Secrets stay server-side in Streamlit secrets; never put them in source code or public inputs.
+- AI output is untrusted advisory text and cannot bypass policy or trigger payments.
+- Read-only PayPal sandbox requests use OAuth2 and GET existing order; OAuth token creation is not a payment operation.
+- No Firebase integration, production payments, persistence, or real agent orchestration in this public MVP.
+- Live integration functionality must be verified **after** setting credentials in Streamlit Cloud.

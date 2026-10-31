@@ -1,7 +1,8 @@
-"""Standalone hackathon demo; no Firebase, backend, or PayPal dependencies."""
+"""Hackathon demo with optional read-only sandbox and AI integrations."""
 import json
 import streamlit as st
 from engine import Policy, new_proposal, resolve
+from integrations import paypal_sandbox_order_status, ai_purchase_draft
 
 st.set_page_config(page_title='PayPal AgentOps | Trusted Agentic Commerce', page_icon='🛡️', layout='wide')
 st.markdown('''<style>
@@ -11,7 +12,7 @@ h1,h2,h3{letter-spacing:-.035em}
 </style>''', unsafe_allow_html=True)
 st.title('🛡️ PayPal AgentOps')
 st.caption('The Control Plane for Trusted Agentic Commerce · Hackathon MVP')
-st.warning('SIMULATION ONLY — no PayPal API calls, payment captures, transfers, Firebase authentication, or persistent transaction storage.')
+st.warning('SIMULATION ONLY — payment execution is disabled. Optional PayPal sandbox order lookup is READ-ONLY; AI suggestions require human review. No captures or transfers.')
 
 if 'txs' not in st.session_state:
     st.session_state.txs = []
@@ -26,7 +27,7 @@ with st.sidebar:
         st.session_state.txs = []
         st.rerun()
 
-t1,t2,t3,t4=st.tabs(['01 · Agent proposal','02 · Buyer decision','03 · Audit trail','04 · Architecture'])
+t1,t2,t3,t4,t5=st.tabs(['01 · Agent proposal','02 · Buyer decision','03 · Audit trail','04 · Architecture','05 · AI + PayPal sandbox'])
 with t1:
     st.subheader('AI agent proposes a purchase')
     st.caption('This simulates an AI agent request. No external agent is invoked.')
@@ -82,5 +83,43 @@ with t3:
 with t4:
     st.subheader('Architecture and integration boundaries')
     st.code('AI agent proposal → AgentOps policy gate → Explicit buyer decision\n                 ↓ blocked             ↓ approved\n             Audit decision     Simulated outcome → Audit events',language='text')
-    st.markdown('''**What this demo actually executes:** deterministic local policy evaluation, explicit approval/rejection, and session-scoped audit events.\n\n**What is not executed:** real AI-agent invocation, Firebase token verification, PayPal orders/capture, webhooks, or persistent storage.\n\n**Production integration concept:** an authenticated agent would submit a purchase proposal; AgentOps would apply tenant/buyer policy and require consent before any separate PayPal execution service is enabled. Payment execution remains intentionally disconnected in this release.\n\n**Earlier sandbox development:** PayPal sandbox API and webhook experiments belong to the separate development backend; this demo does not call or validate those integrations.''')
+    st.markdown('''**What this demo actually executes:** deterministic local policy evaluation, explicit approval/rejection, and session-scoped audit events.\n\n**What is not executed:** payment creation/capture, Firebase token verification, webhooks, or persistent storage. Optional AI drafting and PayPal sandbox read-only lookup are available only when configured with server-side credentials.\n\n**Production integration concept:** an authenticated agent would submit a purchase proposal; AgentOps would apply tenant/buyer policy and require consent before any separate PayPal execution service is enabled. Payment execution remains intentionally disconnected in this release.\n\n**Earlier sandbox development:** PayPal sandbox API and webhook experiments belong to the separate development backend; this demo does not call or validate those integrations.''')
     st.caption('Designed for a truthful, safe product demonstration—not a production payment system.')
+
+with t5:
+    st.subheader('Optional external integrations · safe sandbox mode')
+    st.caption('The integrations below use server-side secrets. Neither can initiate or capture a payment.')
+    try:
+        secrets = st.secrets
+        openai_key = secrets.get('OPENAI_API_KEY', '')
+        paypal_id = secrets.get('PAYPAL_SANDBOX_CLIENT_ID', '')
+        paypal_secret = secrets.get('PAYPAL_SANDBOX_CLIENT_SECRET', '')
+    except Exception:
+        openai_key = paypal_id = paypal_secret = ''
+    st.markdown('#### AI-assisted purchase drafting')
+    request_text = st.text_area('Describe what you want an agent to buy', 'Suggest a suitable office supply purchase under £100.')
+    if st.button('Generate AI suggestion', disabled=not bool(openai_key)):
+        try:
+            suggestion = ai_purchase_draft(openai_key, request_text)
+            st.session_state.ai_suggestion = suggestion
+        except Exception:
+            st.error('AI service unavailable. Check server-side API configuration and retry.')
+    if 'ai_suggestion' in st.session_state:
+        st.info(st.session_state.ai_suggestion)
+        st.caption('AI output is advisory only. Enter the merchant and amount in Agent proposal; policy and buyer consent still apply.')
+    if not openai_key:
+        st.info('AI integration not configured: add OPENAI_API_KEY to Streamlit app secrets to enable live model responses.')
+    st.divider()
+    st.markdown('#### PayPal sandbox · read-only order status')
+    order_id = st.text_input('Existing sandbox order ID', help='An order already created in your separate PayPal sandbox development environment.')
+    if st.button('Retrieve sandbox order status', disabled=not bool(paypal_id and paypal_secret)):
+        try:
+            result = paypal_sandbox_order_status(paypal_id, paypal_secret, order_id)
+            st.json(result)
+        except ValueError as exc:
+            st.warning(str(exc))
+        except Exception:
+            st.error('Sandbox lookup failed. Verify order ID, credentials, and sandbox access.')
+    if not (paypal_id and paypal_secret):
+        st.info('PayPal sandbox not configured: add PAYPAL_SANDBOX_CLIENT_ID and PAYPAL_SANDBOX_CLIENT_SECRET to Streamlit app secrets.')
+    st.caption('Read-only API operations: OAuth token exchange and GET /v2/checkout/orders/{id}. No POST to create/capture/authorize endpoints.')

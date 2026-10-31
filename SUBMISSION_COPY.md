@@ -1,22 +1,11 @@
 # PayPal AgentOps — Hackathon Submission
 
-**Project:** PayPal AgentOps — The Control Plane for Trusted Agentic Commerce
+**Live demo:** https://paypal-agentops-hackathon-eksknbyjh7w4vc8cjb9yiy.streamlit.app/  
+**Source:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon  
+**Recording guide:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon/blob/main/DEMO_SCRIPT.md
 
-**One-liner:** A buyer-first control plane concept that applies spending policies, requires explicit approval, and records explainable decisions before AI-initiated purchases can proceed.
+PayPal AgentOps is a buyer-first control plane concept for agentic commerce. The Streamlit MVP applies deterministic merchant and spending policies, requests explicit buyer approval, and records session-based decisions. Optional OpenAI Responses API integration generates advisory purchase suggestions. Optional PayPal sandbox Orders v2 integration authenticates and retrieves existing sandbox order status read-only. These integrations are enabled only when deployment secrets are configured; they are not evidence of live production payments.
 
-**Problem:** Autonomous shopping agents can streamline commerce, but users need transparent controls over merchant choice, spending limits, and consent.
+**No payments are created, authorized, captured, refunded, or transferred by this app.** The public demo does not orchestrate an autonomous purchasing agent, and AI output cannot bypass policy. The sandbox order lookup is separate from the simulated purchase flow.
 
-**Solution:** AgentOps evaluates simulated agent purchase proposals against buyer policy, routes permitted proposals to an explicit approval step, and displays an audit trail of every decision.
-
-**Demo scope:** A standalone Streamlit MVP demonstrating policy gating, buyer approval/rejection, simulated outcomes, and session-only audit history. This public demo intentionally does not execute PayPal transactions or integrate a live AI agent.
-
-**Integration direction:** In a fuller implementation, an authenticated agent would submit purchase intents to AgentOps, which would apply authorization and buyer policy before an isolated PayPal payment service is allowed to execute. Previous PayPal sandbox experiments were carried out separately; they are not part of this demo runtime.
-
-**Project links:**
-- **Live interactive demo:** https://paypal-agentops-hackathon-eksknbyjh7w4vc8cjb9yiy.streamlit.app/
-- **GitHub repository:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon
-- **Demo recording guide:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon/blob/main/DEMO_SCRIPT.md
-
-**Video status:** The demo recording has not yet been published. The live interactive demo and source code are available using the verified links above. The recording URL can be added after publication.
-
-**Claims to avoid:** "Live PayPal integration in this demo", "production-ready", "real AI agent transactions", "immutable audit trail", "money transferred".
+A video link will be added when a recording is actually published.
