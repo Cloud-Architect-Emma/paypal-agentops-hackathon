@@ -1,0 +1,86 @@
+"""Standalone hackathon demo; no Firebase, backend, or PayPal dependencies."""
+import json
+import streamlit as st
+from engine import Policy, new_proposal, resolve
+
+st.set_page_config(page_title='PayPal AgentOps | Trusted Agentic Commerce', page_icon='🛡️', layout='wide')
+st.markdown('''<style>
+.block-container{padding-top:2rem;max-width:1150px}
+h1,h2,h3{letter-spacing:-.035em}
+[data-testid="stMetric"]{border:1px solid #d9dfe7;border-radius:12px;padding:14px}
+</style>''', unsafe_allow_html=True)
+st.title('🛡️ PayPal AgentOps')
+st.caption('The Control Plane for Trusted Agentic Commerce · Hackathon MVP')
+st.warning('SIMULATION ONLY — no PayPal API calls, payment captures, transfers, Firebase authentication, or persistent transaction storage.')
+
+if 'txs' not in st.session_state:
+    st.session_state.txs = []
+
+with st.sidebar:
+    st.header('Demo control plane')
+    st.success('Payment execution: DISABLED')
+    st.info('Session-only demo data. Browser session reset clears the history.')
+    st.markdown('**Demo scenarios**')
+    st.markdown('1. £49.99 Office Supplies → approval required\n\n2. £150 Office Supplies → blocked\n\n3. £30 Unknown Merchant → blocked')
+    if st.button('Clear demo session', use_container_width=True):
+        st.session_state.txs = []
+        st.rerun()
+
+t1,t2,t3,t4=st.tabs(['01 · Agent proposal','02 · Buyer decision','03 · Audit trail','04 · Architecture'])
+with t1:
+    st.subheader('AI agent proposes a purchase')
+    st.caption('This simulates an AI agent request. No external agent is invoked.')
+    with st.form('proposal'):
+        a,b=st.columns(2)
+        with a:
+            merchant=st.selectbox('Merchant',['Office Supplies','Cloud Tools','Travel Booking','Unknown Merchant'])
+            amount=st.number_input('Purchase amount · GBP',min_value=0.01,value=49.99,step=1.0)
+            description=st.text_input('Reason for purchase','Purchase supplies for team')
+        with b:
+            limit=st.number_input('Maximum permitted amount · GBP',min_value=1.0,value=100.0)
+            allowed=st.multiselect('Buyer-approved merchants',['Office Supplies','Cloud Tools','Travel Booking'],default=['Office Supplies','Cloud Tools'])
+        submit=st.form_submit_button('Evaluate purchase policy',type='primary',use_container_width=True)
+    if submit:
+        tx=new_proposal(merchant,amount,description,Policy(limit,tuple(allowed)))
+        st.session_state.txs.insert(0,tx)
+        if tx['status']=='BLOCKED':st.error(f"BLOCKED · {tx['reason']}")
+        else:st.success(f"POLICY PASSED · {tx['reason']} Open Buyer decision to approve or reject.")
+        st.code(tx['id'])
+with t2:
+    st.subheader('Human-in-the-loop approval')
+    pending=[x for x in st.session_state.txs if x['status']=='PENDING_APPROVAL']
+    if not pending:st.info('No proposals pending. Create a policy-compliant proposal first.')
+    else:
+        ids={x['id']:x for x in pending}
+        chosen=st.selectbox('Pending proposal',list(ids),format_func=lambda k:f"{k} · {ids[k]['merchant']} · £{ids[k]['amount']:.2f}")
+        tx=ids[chosen]
+        st.write(f"**Merchant:** {tx['merchant']} · **Amount:** £{tx['amount']:.2f} · **Reason:** {tx['description']}")
+        st.write(f"**Policy:** {tx['reason']}")
+        consent=st.checkbox('I explicitly approve this merchant and exact amount.',key='consent_'+chosen)
+        c1,c2=st.columns(2)
+        with c1:
+            if st.button('Approve (simulate only)',type='primary',disabled=not consent,use_container_width=True):
+                resolve(tx,True);st.success('Approval recorded. No payment executed.');st.rerun()
+        with c2:
+            if st.button('Reject proposal',use_container_width=True):
+                resolve(tx,False);st.error('Proposal rejected.');st.rerun()
+with t3:
+    st.subheader('Explainable transaction decisions')
+    txs=st.session_state.txs
+    c1,c2,c3,c4=st.columns(4)
+    c1.metric('Proposals',len(txs))
+    c2.metric('Pending',sum(x['status']=='PENDING_APPROVAL' for x in txs))
+    c3.metric('Blocked',sum(x['status']=='BLOCKED' for x in txs))
+    c4.metric('Simulated approvals',sum(x['status']=='SIMULATED_APPROVED' for x in txs))
+    if not txs:st.info('No proposals yet. Create one in Agent proposal.')
+    for tx in txs:
+        with st.expander(f"{tx['id']} · {tx['merchant']} · £{tx['amount']:.2f} · {tx['status']}"):
+            st.write('**Decision:**',tx['reason'])
+            st.write('**Purchase reason:**',tx['description'])
+            st.dataframe(tx['events'],use_container_width=True,hide_index=True)
+            st.download_button('Download this audit record (JSON)',json.dumps(tx,indent=2),file_name=tx['id']+'.json',mime='application/json',key='download_'+tx['id'])
+with t4:
+    st.subheader('Architecture and integration boundaries')
+    st.code('AI agent proposal → AgentOps policy gate → Explicit buyer decision\n                 ↓ blocked             ↓ approved\n             Audit decision     Simulated outcome → Audit events',language='text')
+    st.markdown('''**What this demo actually executes:** deterministic local policy evaluation, explicit approval/rejection, and session-scoped audit events.\n\n**What is not executed:** real AI-agent invocation, Firebase token verification, PayPal orders/capture, webhooks, or persistent storage.\n\n**Production integration concept:** an authenticated agent would submit a purchase proposal; AgentOps would apply tenant/buyer policy and require consent before any separate PayPal execution service is enabled. Payment execution remains intentionally disconnected in this release.\n\n**Earlier sandbox development:** PayPal sandbox API and webhook experiments belong to the separate development backend; this demo does not call or validate those integrations.''')
+    st.caption('Designed for a truthful, safe product demonstration—not a production payment system.')
