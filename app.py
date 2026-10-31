@@ -1,70 +1,11 @@
-"""PayPal AgentOps hackathon MVP: AI -> policy -> buyer decision -> audit."""
-import json
-import logging
-
-import streamlit as st
-
-from ai_proposal import MERCHANT_CATEGORIES
-from engine import Policy, new_proposal, resolve, event
-from gemini_proposal import generate_ai_proposal
-from integrations import paypal_sandbox_order_status
-
-st.set_page_config(page_title='PayPal AgentOps | Trusted Agentic Commerce', page_icon='🛡️', layout='wide')
-st.markdown('''<style>
-.block-container{padding-top:2rem;max-width:1150px}
-h1,h2,h3{letter-spacing:-.035em}
-[data-testid="stMetric"]{border:1px solid #d9dfe7;border-radius:12px;padding:14px}
-</style>''', unsafe_allow_html=True)
-st.title('🛡️ PayPal AgentOps')
-st.caption('The Control Plane for Trusted Agentic Commerce · Hackathon MVP')
-st.warning('SIMULATION ONLY — payment execution is disabled. PayPal sandbox order lookup is READ-ONLY. AI suggestions require policy checks and human review. No captures or transfers.')
-
-if 'txs' not in st.session_state:
-    st.session_state.txs = []
-if 'ai_candidate' not in st.session_state:
-    st.session_state.ai_candidate = None
-
-with st.sidebar:
-    st.header('Demo control plane')
-    st.success('Payment execution: DISABLED')
-    st.info('Session-only demo data. Browser session reset clears the history.')
-    st.markdown('**Demo scenarios**')
-    st.markdown('1. £49.99 Office Supplies → approval required\n\n2. £150 Office Supplies → blocked\n\n3. £30 Unknown Merchant → blocked')
-    if st.button('Clear demo session', use_container_width=True):
-        st.session_state.txs = []
-        st.session_state.ai_candidate = None
-        st.session_state.pop('ai_suggestion', None)
-        st.rerun()
-
-t1, t2, t3, t4, t5 = st.tabs([
-    '01 · Agent proposal', '02 · Buyer decision', '03 · Audit trail',
-    '04 · Architecture', '05 · AI + PayPal sandbox'
-])
-
-with t1:
-    st.subheader('Create a purchase proposal')
-    st.caption('Manual simulation is available here. For a live Gemini-generated proposal, use tab 05.')
-    with st.form('proposal'):
-        a, b = st.columns(2)
-        with a:
-            merchant = st.selectbox('Merchant', MERCHANT_CATEGORIES)
-            amount = st.number_input('Purchase amount · GBP', min_value=0.01, value=49.99, step=1.0)
-            description = st.text_input('Reason for purchase', 'Purchase supplies for team')
-        with b:
-            limit = st.number_input('Maximum permitted amount · GBP', min_value=1.0, value=100.0)
-            allowed = st.multiselect('Buyer-approved merchant categories', MERCHANT_CATEGORIES[:-1], default=['Office Supplies', 'Cloud Tools'])
-        submit = st.form_submit_button('Evaluate purchase policy', type='primary', use_container_width=True)
-    if submit:
-        tx = new_proposal(merchant, amount, description, Policy(limit, tuple(allowed)))
-        st.session_state.txs.insert(0, tx)
-        if tx['status'] == 'BLOCKED':
-            st.error(f"BLOCKED · {tx['reason']}")
-        else:
-            st.success(f"POLICY PASSED · {tx['reason']} Open Buyer decision to approve or reject.")
-        st.code(tx['id'])
-
-with t2:
     st.subheader('Human-in-the-loop approval')
+    notice = st.session_state.get('submission_notice')
+    if notice:
+        status, proposal_id, reason = notice
+        if status == 'BLOCKED':
+            st.warning(f'Proposal {proposal_id} blocked: {reason}. See Audit trail.')
+        else:
+            st.success(f'Proposal {proposal_id} is awaiting your approval.')
     pending = [x for x in st.session_state.txs if x['status'] == 'PENDING_APPROVAL']
     if not pending:
         st.info('No proposals pending. Create a policy-compliant proposal in tab 01 or tab 05.')
@@ -161,10 +102,8 @@ with t5:
             event(tx, 'AI_GENERATED_PROPOSAL', 'Structured Gemini proposal validated and submitted for policy evaluation. AI did not approve or execute payment.')
             st.session_state.txs.insert(0, tx)
             st.session_state.ai_candidate = None
-            if tx['status'] == 'BLOCKED':
-                st.error(f"BLOCKED · {tx['reason']} See Audit trail for details. ID: {tx['id']}")
-            else:
-                st.success(f"POLICY PASSED · {tx['id']}. Open tab 02 · Buyer decision to approve or reject.")
+            st.session_state.submission_notice = (tx['status'], tx['id'], tx['reason'])
+            st.rerun()
     if not gemini_key:
         st.info('Add GEMINI_API_KEY to Streamlit app secrets to enable live model responses.')
 
