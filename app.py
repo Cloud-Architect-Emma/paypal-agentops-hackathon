@@ -10,14 +10,41 @@ from gemini_proposal import generate_ai_proposal
 from integrations import paypal_sandbox_order_status, paypal_sandbox_create_order
 
 st.set_page_config(page_title='PayPal AgentOps | Trusted Agentic Commerce', page_icon='🛡️', layout='wide')
-st.markdown('''<style>
-.block-container{padding-top:2rem;max-width:1150px}
-h1,h2,h3{letter-spacing:-.035em}
-[data-testid="stMetric"]{border:1px solid #d9dfe7;border-radius:12px;padding:14px}
-</style>''', unsafe_allow_html=True)
-st.title('🛡️ PayPal AgentOps')
-st.caption('The Control Plane for Trusted Agentic Commerce · Hackathon MVP')
-st.warning('SANDBOX ONLY — buyer-approved proposals may create PayPal sandbox orders after separate confirmation. No authorization, captures or transfers. AI suggestions require policy checks and human review.')
+st.markdown("""<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+:root {--ink:#eaf3fa;--muted:#9db2c4;--teal:#32d8be;--edge:#244258;--panel:#10283c}
+html, body, [class*="css"], [data-testid="stAppViewContainer"] {font-family:'DM Sans',sans-serif}
+[data-testid="stAppViewContainer"] {background:radial-gradient(ellipse 1000px 520px at 82% -15%,#16465b 0%,transparent 65%),#071a2a;color:#eaf3fa}
+[data-testid="stSidebar"] {background:#0a2032;border-right:1px solid #254155}
+[data-testid="stSidebar"] * {color:#e4eff6}
+.block-container{padding-top:1.4rem;max-width:1370px;padding-bottom:4rem}
+h1,h2,h3 {font-family:'Manrope',sans-serif;letter-spacing:-.045em;color:#f2fbff}
+h1 {font-size:2.1rem!important} h2{font-size:1.55rem!important} h3{font-size:1.2rem!important}
+p, label {line-height:1.65}
+[data-testid="stMetric"]{background:linear-gradient(145deg,#112e43,#0b2335);border:1px solid #28485c;border-radius:17px;padding:19px 22px;box-shadow:0 12px 25px #04131e44}
+[data-testid="stMetricLabel"]{color:#9fb9ca}[data-testid="stMetricValue"]{color:#f2fbff;font-family:'Manrope',sans-serif}
+[data-testid="stForm"], [data-testid="stExpander"], [data-testid="stVerticalBlockBorderWrapper"]>div {border-radius:15px}
+[data-testid="stForm"]{background:#0e273b;border:1px solid #29475a;padding:19px}
+[data-testid="stExpander"]{background:#0d2639;border:1px solid #29475a}
+[data-testid="stTabs"] [data-baseweb="tab-list"]{gap:8px;flex-wrap:wrap}
+[data-testid="stTabs"] button[role="tab"]{background:#102b40;border:1px solid #294b60;border-radius:11px;padding:9px 15px;color:#b6cfde}
+[data-testid="stTabs"] button[aria-selected="true"]{background:#155267;color:#fff;border-color:#2acbb7}
+.stButton button[kind="primary"],.stFormSubmitButton button[kind="primary"]{background:#2bd4bb;color:#062333;border:0;font-weight:800;border-radius:10px}
+.stButton button,.stDownloadButton button{border-radius:10px}
+[data-testid="stAlert"]{border-radius:12px}
+.hero{border:1px solid #29566a;border-radius:23px;padding:32px 36px;background:linear-gradient(115deg,#103c53,#10273d 65%,#102f43);margin:12px 0 25px;box-shadow:0 20px 50px #04121e55}
+.hero-kicker{font-size:12px;font-weight:800;letter-spacing:2.5px;color:#46e2c9;text-transform:uppercase}
+.hero-title{font:800 clamp(28px,3.2vw,45px)/1.18 'Manrope',sans-serif;letter-spacing:-1.7px;color:#fff;margin:14px 0}
+.hero-copy{font-size:16px;line-height:1.7;color:#bad0df;max-width:720px}
+.pill{display:inline-block;border:1px solid #397485;border-radius:30px;padding:6px 12px;font-size:12px;color:#6aefda;background:#103e4d;margin-top:15px}
+.section-kicker{font-size:12px;color:#46d9c3;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;margin:25px 0 8px}
+.feature-card{min-height:158px;border:1px solid #2a4a5f;border-radius:17px;background:linear-gradient(140deg,#123147,#0b2335);padding:23px;margin-bottom:15px}
+.feature-icon{font-size:24px}.feature-title{font:700 18px 'Manrope',sans-serif;color:#f4fbff;margin:11px 0 8px}.feature-copy{color:#aec5d4;font-size:14px;line-height:1.6}
+.flow-node{border:1px solid #31576a;border-radius:15px;background:#113146;padding:17px 12px;text-align:center;min-height:120px}
+.flow-node strong{display:block;color:#f5fcff;font-size:15px;margin:8px 0}.flow-node span{color:#a8c6d5;font-size:12px}
+.safe-banner{background:#0d3540;border:1px solid #237b75;border-radius:12px;padding:13px 17px;color:#b8f2e8;font-size:13px;margin:14px 0 22px}
+@media(max-width:760px){.hero{padding:23px}.hero-title{font-size:28px}.block-container{padding-top:1rem}}
+</style>""",unsafe_allow_html=True)
 
 if 'txs' not in st.session_state:
     st.session_state.txs = []
@@ -25,12 +52,21 @@ if 'ai_candidate' not in st.session_state:
     st.session_state.ai_candidate = None
 
 with st.sidebar:
-    st.header('Demo control plane')
-    st.success('Payment execution: DISABLED')
-    st.info('Session-only demo data. Browser session reset clears the history.')
-    st.markdown('**Demo scenarios**')
-    st.markdown('1. £49.99 Office Supplies → approval required\n\n2. £150 Office Supplies → blocked\n\n3. £30 Unknown Merchant → blocked')
-    if st.button('Clear demo session', use_container_width=True):
+    st.markdown('### 🛡️ AGENTOPS')
+    st.caption('TRUSTED AGENTIC COMMERCE')
+    st.divider()
+    st.markdown('**ENVIRONMENT**')
+    st.success('● PayPal Sandbox')
+    st.markdown('**EXECUTION POLICY**')
+    st.info('Order creation only\n\nNo captures or transfers')
+    st.divider()
+    st.markdown('**DEMO SCENARIOS**')
+    st.caption('✓ £49.99 Office Supplies — approval required')
+    st.caption('⊘ £150 Office Supplies — blocked')
+    st.caption('⊘ Unknown Merchant — blocked')
+    st.divider()
+    st.caption('Data lives in this Streamlit session. Reloading or resetting the session may clear history.')
+    if st.button('↺ Reset demo session', use_container_width=True):
         st.session_state.txs = []
         st.session_state.ai_candidate = None
         st.session_state.pop('ai_suggestion', None)
@@ -38,12 +74,50 @@ with st.sidebar:
         st.session_state.pop('latest_proposal_id', None)
         st.rerun()
 
-t1, t2, t3, t4, t5 = st.tabs([
-    '01 · Agent proposal', '02 · Buyer decision', '03 · Audit trail',
-    '04 · Architecture', '05 · AI + PayPal sandbox'
+st.markdown('<div class="hero-kicker">PAYPAL AGENTOPS / CONTROL PLANE</div>', unsafe_allow_html=True)
+st.title('Trusted Agentic Commerce')
+st.caption('AI-assisted purchasing · Buyer policy enforcement · Human-in-the-loop approval')
+st.markdown('<div class="safe-banner">🔒 SANDBOX ONLY &nbsp;·&nbsp; Explicit buyer confirmation required &nbsp;·&nbsp; No authorization, captures or transfers</div>',unsafe_allow_html=True)
+
+t0,t1,t2,t3,t4,t5 = st.tabs([
+    '◈ Overview', '01 · Proposals', '02 · Approvals', '03 · Audit trail',
+    '04 · Architecture', '05 · AI + PayPal'
 ])
 
+with t0:
+    st.markdown("""<div class="hero">
+      <div class="hero-kicker">THE COMMERCE TRUST LAYER</div>
+      <div class="hero-title">Give AI the ability to propose.<br>Keep people in control.</div>
+      <div class="hero-copy">An explainable control plane for agent-driven purchases. Gemini drafts the request, deterministic policy decides what is allowed, and buyers retain final approval before a PayPal sandbox order can be created.</div>
+      <span class="pill">● Live sandbox integration</span> &nbsp; <span class="pill">✓ Human approval required</span>
+    </div>""",unsafe_allow_html=True)
+    txs_home=st.session_state.txs
+    c1,c2,c3,c4=st.columns(4)
+    c1.metric('Total proposals',len(txs_home))
+    c2.metric('Awaiting review',sum(x['status']=='PENDING_APPROVAL' for x in txs_home))
+    c3.metric('Policy blocked',sum(x['status']=='BLOCKED' for x in txs_home))
+    c4.metric('Sandbox orders',sum(bool(x.get('paypal_order_id')) for x in txs_home))
+    st.markdown('<div class="section-kicker">CORE CAPABILITIES</div>',unsafe_allow_html=True)
+    a,b,c=st.columns(3)
+    with a:
+        st.markdown('<div class="feature-card"><div class="feature-icon">✦</div><div class="feature-title">AI Purchase Intelligence</div><div class="feature-copy">Gemini produces structured proposals. Suggestions are validated before entering the policy engine.</div></div>',unsafe_allow_html=True)
+    with b:
+        st.markdown('<div class="feature-card"><div class="feature-icon">🛡</div><div class="feature-title">Deterministic Policy</div><div class="feature-copy">Buyer-defined amount limits and approved merchant categories prevent non-compliant requests.</div></div>',unsafe_allow_html=True)
+    with c:
+        st.markdown('<div class="feature-card"><div class="feature-icon">✓</div><div class="feature-title">Human-Governed Checkout</div><div class="feature-copy">A separate buyer confirmation is required to create a PayPal sandbox order; no capture occurs.</div></div>',unsafe_allow_html=True)
+    st.markdown('<div class="section-kicker">RECENT ACTIVITY</div>',unsafe_allow_html=True)
+    if txs_home:
+        for tx in txs_home[:5]:
+            left,right=st.columns([4,1])
+            with left: st.markdown(f"**{tx['id']}** · {tx['merchant']} · £{tx['amount']:.2f}")
+            with right: st.caption(tx['status'].replace('_',' '))
+            st.divider()
+    else:
+        st.info('No activity yet. Open **01 · Proposals** to create your first purchase request, or **05 · AI + PayPal** to generate one with Gemini.')
+    st.caption('Session-only audit history · Sandbox orders are not payments · No real money moves')
+
 with t1:
+    st.markdown('<div class="section-kicker">PURCHASE INTELLIGENCE</div>',unsafe_allow_html=True)
     st.subheader('Create a purchase proposal')
     st.caption('Manual simulation is available here. For a live Gemini-generated proposal, use tab 05.')
     with st.form('proposal'):
@@ -63,6 +137,7 @@ with t1:
         st.rerun()
 
 with t2:
+    st.markdown('<div class="section-kicker">BUYER CONTROL</div>',unsafe_allow_html=True)
     st.subheader('Human-in-the-loop approval')
     latest_id = st.session_state.get('latest_proposal_id')
     latest = next((x for x in st.session_state.txs if x['id'] == latest_id), None)
@@ -137,6 +212,7 @@ with t2:
         st.info('Set PAYPAL_SANDBOX_CLIENT_ID and PAYPAL_SANDBOX_CLIENT_SECRET in Streamlit secrets.')
 
 with t3:
+    st.markdown('<div class="section-kicker">TRANSACTION OBSERVABILITY</div>',unsafe_allow_html=True)
     st.subheader('Explainable transaction decisions')
     txs = st.session_state.txs
     c1, c2, c3, c4 = st.columns(4)
@@ -153,12 +229,25 @@ with t3:
             st.write('**AgentOps proposal ID:**', tx['id'])
             st.write('**PayPal sandbox Order ID:**', tx.get('paypal_order_id') or 'Not created')
             st.write('**PayPal sandbox status:**', tx.get('paypal_order_status') or 'Not applicable')
-            st.dataframe(tx['events'], use_container_width=True, hide_index=True)
+            st.markdown('**Decision timeline**')
+            for item in tx['events']:
+                st.markdown(f"**{item['type'].replace('_', ' ').title()}** · `{item['at']}`")
+                st.caption(item['detail'])
+            with st.expander('View raw audit events'):
+                st.dataframe(tx['events'], use_container_width=True, hide_index=True)
             st.download_button('Download this audit record (JSON)', json.dumps(tx, indent=2), file_name=tx['id'] + '.json', mime='application/json', key='download_' + tx['id'])
 
 with t4:
+    st.markdown('<div class="section-kicker">SYSTEM DESIGN</div>',unsafe_allow_html=True)
     st.subheader('Architecture and integration boundaries')
-    st.code('Gemini structured proposal → Validate fields → AgentOps policy gate\n                                                ↓ blocked       ↓ eligible\n                                            Audit record   Buyer decision\n                                                               ↓\n                                                  Simulated outcome → Audit', language='text')
+    st.caption('A layered trust boundary separates AI recommendations, deterministic decisions and sandbox API access.')
+    stages=[('✦','Gemini AI','Structured proposal'),('▣','Validation','Schema + amount'),('🛡','Policy engine','Limit + allowlist'),('✓','Buyer review','Approve / reject'),('◎','PayPal Sandbox','Create order only')]
+    columns=st.columns(5)
+    for column,(symbol,name,desc) in zip(columns,stages):
+        with column:
+            st.markdown(f'<div class="flow-node"><div style="font-size:22px;color:#45dfc8">{symbol}</div><strong>{name}</strong><span>{desc}</span></div>',unsafe_allow_html=True)
+    st.markdown('**Decision branches:** Invalid or non-compliant requests → `BLOCKED` + audit event. Buyer rejection → `REJECTED` + audit event. Buyer approval → optional, separately confirmed sandbox order creation + audit event.')
+    st.divider()
     st.markdown('''**What this demo executes:** Gemini generates a structured draft; the application validates its category, amount and description; the deterministic policy engine blocks or marks it pending; a buyer can approve or reject a pending proposal; all decisions are recorded in session-scoped audit events.
 
 **PayPal integration:** After policy checks and buyer approval, a separately confirmed action can create a sandbox checkout order. Order lookup is read-only. No authorization, capture, Firebase token verification, webhooks or persistent storage.
@@ -167,6 +256,7 @@ with t4:
     st.caption('Designed for a truthful, safe hackathon demonstration—not a production payment system.')
 
 with t5:
+    st.markdown('<div class="section-kicker">LIVE INTEGRATIONS</div>',unsafe_allow_html=True)
     st.subheader('Live Gemini → policy evaluation → buyer approval')
     st.caption('Gemini proposes; your policy decides; only a human can approve. No payment is executed.')
     try:
