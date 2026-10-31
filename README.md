@@ -2,6 +2,12 @@
 
 **Hackathon demonstration / simulation only.** No money moves; no PayPal API calls occur in this repository.
 
+## Project links
+- **Live demo:** https://paypal-agentops-hackathon-eksknbyjh7w4vc8cjb9yiy.streamlit.app/
+- **GitHub repository:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon
+- **Recording guide:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon/blob/main/DEMO_SCRIPT.md
+- **Submission details:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon/blob/main/SUBMISSION_COPY.md
+
 ## Problem
 AI shopping agents can initiate purchases, but buyers and operators need transparent policy gates, explicit consent, and auditable decisions before any payment execution.
 
@@ -18,11 +24,8 @@ python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-## Deploy to Streamlit Community Cloud
-1. Create a **new public GitHub repository** and upload the files in this directory (including `.streamlit/config.toml`). Do **not** upload the original AgentOps backend, `agentops.db`, credentials, `.env`, or service-account JSON.
-2. In Streamlit Community Cloud choose **Create app** → **Deploy a public app from GitHub**.
-3. Select the new repository, branch `main`, and entrypoint `app.py`.
-4. Deploy and test all three scenarios. No secrets are required.
+## Public deployment
+The Streamlit application is live at https://paypal-agentops-hackathon-eksknbyjh7w4vc8cjb9yiy.streamlit.app/. It deploys from branch `main` with entrypoint `app.py`. No secrets are required.
 
 ## Architecture
 ```text
