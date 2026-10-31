@@ -1,12 +1,13 @@
-"""Hackathon demo with optional read-only PayPal sandbox and Gemini AI integrations."""
+"""PayPal AgentOps hackathon MVP: AI -> policy -> buyer decision -> audit."""
 import json
 import logging
 
 import streamlit as st
 
-from engine import Policy, new_proposal, resolve
+from ai_proposal import MERCHANT_CATEGORIES
+from engine import Policy, new_proposal, resolve, event
+from gemini_proposal import generate_ai_proposal
 from integrations import paypal_sandbox_order_status
-from gemini_integration import gemini_purchase_draft
 
 st.set_page_config(page_title='PayPal AgentOps | Trusted Agentic Commerce', page_icon='🛡️', layout='wide')
 st.markdown('''<style>
@@ -16,10 +17,12 @@ h1,h2,h3{letter-spacing:-.035em}
 </style>''', unsafe_allow_html=True)
 st.title('🛡️ PayPal AgentOps')
 st.caption('The Control Plane for Trusted Agentic Commerce · Hackathon MVP')
-st.warning('SIMULATION ONLY — payment execution is disabled. Optional PayPal sandbox order lookup is READ-ONLY; AI suggestions require human review. No captures or transfers.')
+st.warning('SIMULATION ONLY — payment execution is disabled. PayPal sandbox order lookup is READ-ONLY. AI suggestions require policy checks and human review. No captures or transfers.')
 
 if 'txs' not in st.session_state:
     st.session_state.txs = []
+if 'ai_candidate' not in st.session_state:
+    st.session_state.ai_candidate = None
 
 with st.sidebar:
     st.header('Demo control plane')
@@ -29,6 +32,7 @@ with st.sidebar:
     st.markdown('1. £49.99 Office Supplies → approval required\n\n2. £150 Office Supplies → blocked\n\n3. £30 Unknown Merchant → blocked')
     if st.button('Clear demo session', use_container_width=True):
         st.session_state.txs = []
+        st.session_state.ai_candidate = None
         st.session_state.pop('ai_suggestion', None)
         st.rerun()
 
@@ -38,17 +42,17 @@ t1, t2, t3, t4, t5 = st.tabs([
 ])
 
 with t1:
-    st.subheader('AI agent proposes a purchase')
-    st.caption('This simulates an AI agent request. No external agent is invoked in this tab.')
+    st.subheader('Create a purchase proposal')
+    st.caption('Manual simulation is available here. For a live Gemini-generated proposal, use tab 05.')
     with st.form('proposal'):
         a, b = st.columns(2)
         with a:
-            merchant = st.selectbox('Merchant', ['Office Supplies', 'Cloud Tools', 'Travel Booking', 'Unknown Merchant'])
+            merchant = st.selectbox('Merchant', MERCHANT_CATEGORIES)
             amount = st.number_input('Purchase amount · GBP', min_value=0.01, value=49.99, step=1.0)
             description = st.text_input('Reason for purchase', 'Purchase supplies for team')
         with b:
             limit = st.number_input('Maximum permitted amount · GBP', min_value=1.0, value=100.0)
-            allowed = st.multiselect('Buyer-approved merchants', ['Office Supplies', 'Cloud Tools', 'Travel Booking'], default=['Office Supplies', 'Cloud Tools'])
+            allowed = st.multiselect('Buyer-approved merchant categories', MERCHANT_CATEGORIES[:-1], default=['Office Supplies', 'Cloud Tools'])
         submit = st.form_submit_button('Evaluate purchase policy', type='primary', use_container_width=True)
     if submit:
         tx = new_proposal(merchant, amount, description, Policy(limit, tuple(allowed)))
@@ -63,14 +67,15 @@ with t2:
     st.subheader('Human-in-the-loop approval')
     pending = [x for x in st.session_state.txs if x['status'] == 'PENDING_APPROVAL']
     if not pending:
-        st.info('No proposals pending. Create a policy-compliant proposal first.')
+        st.info('No proposals pending. Create a policy-compliant proposal in tab 01 or tab 05.')
     else:
         ids = {x['id']: x for x in pending}
         chosen = st.selectbox('Pending proposal', list(ids), format_func=lambda k: f"{k} · {ids[k]['merchant']} · £{ids[k]['amount']:.2f}")
         tx = ids[chosen]
-        st.write(f"**Merchant:** {tx['merchant']} · **Amount:** £{tx['amount']:.2f} · **Reason:** {tx['description']}")
+        st.write(f"**Merchant category:** {tx['merchant']} · **Amount:** £{tx['amount']:.2f} · **Reason:** {tx['description']}")
         st.write(f"**Policy:** {tx['reason']}")
-        consent = st.checkbox('I explicitly approve this merchant and exact amount.', key='consent_' + chosen)
+        st.caption('A merchant category is not a verified seller. No payment can be initiated in this demo.')
+        consent = st.checkbox('I explicitly approve this proposed category and exact amount (simulation only).', key='consent_' + chosen)
         c1, c2 = st.columns(2)
         with c1:
             if st.button('Approve (simulate only)', type='primary', disabled=not consent, use_container_width=True):
@@ -90,7 +95,7 @@ with t3:
     c3.metric('Blocked', sum(x['status'] == 'BLOCKED' for x in txs))
     c4.metric('Simulated approvals', sum(x['status'] == 'SIMULATED_APPROVED' for x in txs))
     if not txs:
-        st.info('No proposals yet. Create one in Agent proposal.')
+        st.info('No proposals yet. Create one in Agent proposal or AI + PayPal sandbox.')
     for tx in txs:
         with st.expander(f"{tx['id']} · {tx['merchant']} · £{tx['amount']:.2f} · {tx['status']}"):
             st.write('**Decision:**', tx['reason'])
@@ -100,19 +105,17 @@ with t3:
 
 with t4:
     st.subheader('Architecture and integration boundaries')
-    st.code('AI agent proposal → AgentOps policy gate → Explicit buyer decision\n                 ↓ blocked             ↓ approved\n             Audit decision     Simulated outcome → Audit events', language='text')
-    st.markdown('''**What this demo actually executes:** deterministic local policy evaluation, explicit approval/rejection, and session-scoped audit events.
+    st.code('Gemini structured proposal → Validate fields → AgentOps policy gate\n                                                ↓ blocked       ↓ eligible\n                                            Audit record   Buyer decision\n                                                               ↓\n                                                  Simulated outcome → Audit', language='text')
+    st.markdown('''**What this demo executes:** Gemini generates a structured draft; the application validates its category, amount and description; the deterministic policy engine blocks or marks it pending; a buyer can approve or reject a pending proposal; all decisions are recorded in session-scoped audit events.
 
-**What is not executed:** payment creation/capture, Firebase token verification, webhooks, or persistent storage. Optional Gemini AI drafting and PayPal sandbox read-only lookup are available only when configured with server-side credentials.
+**What is not executed:** payment creation/capture, Firebase token verification, webhooks, or persistent storage. The optional PayPal sandbox lookup only reads an existing order.
 
-**Production integration concept:** an authenticated agent would submit a purchase proposal; AgentOps would apply tenant/buyer policy and require consent before any separate PayPal execution service is enabled. Payment execution remains intentionally disconnected in this release.
-
-**Earlier sandbox development:** PayPal sandbox API and webhook experiments belong to the separate development backend; this demo does not call or validate those integrations.''')
-    st.caption('Designed for a truthful, safe product demonstration—not a production payment system.')
+**Security boundary:** Gemini cannot approve purchases or change the policy. AI-generated categories are not verified merchant identities, and the approval is only simulated. No payment execution service is connected.''')
+    st.caption('Designed for a truthful, safe hackathon demonstration—not a production payment system.')
 
 with t5:
-    st.subheader('Optional external integrations · safe sandbox mode')
-    st.caption('The integrations below use server-side secrets. Neither can initiate or capture a payment.')
+    st.subheader('Live Gemini → policy evaluation → buyer approval')
+    st.caption('Gemini proposes; your policy decides; only a human can approve. No payment is executed.')
     try:
         secrets = st.secrets
         gemini_key = secrets.get('GEMINI_API_KEY', '')
@@ -122,21 +125,48 @@ with t5:
         logging.exception('Could not read Streamlit secrets configuration')
         gemini_key = paypal_id = paypal_secret = ''
 
-    st.markdown('#### Gemini AI-assisted purchase drafting')
     request_text = st.text_area('Describe what you want an agent to buy', 'Suggest a suitable office supply purchase under £100.')
-    if st.button('Generate AI suggestion', disabled=not bool(gemini_key)):
+    with st.form('ai_policy'):
+        col1, col2 = st.columns(2)
+        with col1:
+            ai_limit = st.number_input('Buyer spending limit · GBP', min_value=1.0, value=100.0, key='ai_limit')
+        with col2:
+            ai_allowed = st.multiselect('Approved merchant categories', MERCHANT_CATEGORIES[:-1], default=['Office Supplies', 'Cloud Tools'], key='ai_allowed')
+        generate = st.form_submit_button('Generate AI purchase proposal', disabled=not bool(gemini_key), type='primary', use_container_width=True)
+    if generate:
+        st.session_state.ai_candidate = None
         try:
-            suggestion = gemini_purchase_draft(gemini_key, request_text)
-            st.session_state.ai_suggestion = suggestion
-            st.success('Gemini generated a suggestion for your review.')
+            proposal = generate_ai_proposal(gemini_key, request_text)
+            st.session_state.ai_candidate = {
+                **proposal,
+                'request': request_text,
+                'policy_limit': ai_limit,
+                'policy_allowed': tuple(ai_allowed),
+            }
+            st.success('Gemini generated a structured proposal. Review it before sending it to policy evaluation.')
         except Exception:
-            logging.exception('Gemini API request failed')
+            logging.exception('Gemini structured proposal generation failed')
             st.error('Gemini request failed. Check Streamlit application logs for the detailed error.')
-    if 'ai_suggestion' in st.session_state:
-        st.info(st.session_state.ai_suggestion)
-        st.caption('AI output is advisory only. Enter the merchant and amount in Agent proposal; policy and buyer consent still apply.')
+
+    candidate = st.session_state.ai_candidate
+    if candidate:
+        st.markdown('#### Review AI-generated proposal')
+        st.write(f"**Description:** {candidate['description']}")
+        st.write(f"**Merchant category:** {candidate['merchant']}")
+        st.write(f"**Estimated amount:** £{candidate['amount']:.2f}")
+        st.caption(f"Policy snapshot: £{candidate['policy_limit']:.2f} limit; approved categories: {', '.join(candidate['policy_allowed']) or 'none'}.")
+        st.warning('Gemini-generated details are unverified estimates. Submitting runs the policy engine; it does not approve or pay.')
+        if st.button('Submit AI proposal to policy engine', type='primary', use_container_width=True):
+            tx = new_proposal(candidate['merchant'], candidate['amount'], candidate['description'], Policy(candidate['policy_limit'], candidate['policy_allowed']))
+            event(tx, 'AI_GENERATED_PROPOSAL', 'Structured Gemini proposal validated and submitted for policy evaluation. AI did not approve or execute payment.')
+            st.session_state.txs.insert(0, tx)
+            st.session_state.ai_candidate = None
+            if tx['status'] == 'BLOCKED':
+                st.error(f"BLOCKED · {tx['reason']} See Audit trail for details. ID: {tx['id']}")
+            else:
+                st.success(f"POLICY PASSED · {tx['id']}. Open tab 02 · Buyer decision to approve or reject.")
     if not gemini_key:
-        st.info('Gemini integration not configured: add GEMINI_API_KEY to Streamlit app secrets to enable live model responses.')
+        st.info('Add GEMINI_API_KEY to Streamlit app secrets to enable live model responses.')
 
     st.divider()
     st.markdown('#### PayPal sandbox · read-only order status')
@@ -151,5 +181,5 @@ with t5:
             logging.exception('PayPal sandbox order lookup failed')
             st.error('Sandbox lookup failed. Verify order ID, credentials, and sandbox access.')
     if not (paypal_id and paypal_secret):
-        st.info('PayPal sandbox not configured: add PAYPAL_SANDBOX_CLIENT_ID and PAYPAL_SANDBOX_CLIENT_SECRET to Streamlit app secrets.')
+        st.info('Add PAYPAL_SANDBOX_CLIENT_ID and PAYPAL_SANDBOX_CLIENT_SECRET to Streamlit app secrets for read-only lookup.')
     st.caption('Read-only API operations: OAuth token exchange and GET /v2/checkout/orders/{id}. No POST to create/capture/authorize endpoints.')
