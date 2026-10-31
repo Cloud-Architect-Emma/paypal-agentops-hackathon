@@ -42,3 +42,90 @@ def ai_purchase_draft(api_key, user_request, model="gpt-4.1-mini", request_fn=_r
     result=" ".join(fragments).strip()
     if not result: raise ValueError("AI response did not include text")
     return result
+
+
+def paypal_sandbox_create_order(
+    client_id, client_secret, proposal_id, amount_gbp,
+    request_fn=_request,
+):
+    """Create a sandbox order only. Never capture or authorize."""
+    from decimal import Decimal, InvalidOperation
+
+    if not client_id or not client_secret:
+        raise ValueError("PayPal sandbox credentials are missing")
+
+    if not re.fullmatch(r"DEMO-[A-F0-9]{8}", proposal_id or ""):
+        raise ValueError("Invalid AgentOps proposal ID")
+
+    try:
+        amount = Decimal(str(amount_gbp))
+    except (InvalidOperation, ValueError) as exc:
+        raise ValueError("Invalid purchase amount") from exc
+
+    if (
+        not amount.is_finite()
+        or amount <= 0
+        or amount != amount.quantize(Decimal("0.01"))
+    ):
+        raise ValueError("Invalid GBP amount")
+
+    basic = base64.b64encode(
+        f"{client_id}:{client_secret}".encode()
+    ).decode()
+
+    token = request_fn(
+        PAYPAL_SANDBOX + "/v1/oauth2/token",
+        method="POST",
+        headers={
+            "Authorization": "Basic " + basic,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body=urlencode({
+            "grant_type": "client_credentials"
+        }).encode(),
+    )
+
+    access_token = token.get("access_token")
+
+    if not access_token:
+        raise ValueError("PayPal authentication failed")
+
+    payload = {
+        "intent": "CAPTURE",
+        "purchase_units": [
+            {
+                "reference_id": proposal_id,
+                "custom_id": proposal_id,
+                "amount": {
+                    "currency_code": "GBP",
+                    "value": f"{amount:.2f}",
+                },
+                "description": "AgentOps sandbox approved proposal",
+            }
+        ],
+    }
+
+    order = request_fn(
+        PAYPAL_SANDBOX + "/v2/checkout/orders",
+        method="POST",
+        headers={
+            "Authorization": "Bearer " + access_token,
+            "Content-Type": "application/json",
+            "PayPal-Request-Id": proposal_id,
+            "Prefer": "return=representation",
+        },
+        body=json.dumps(payload).encode(),
+    )
+
+    order_id = order.get("id")
+
+    if not order_id or not re.fullmatch(
+        r"[A-Za-z0-9]{8,32}", order_id
+    ):
+        raise ValueError("PayPal did not return a valid order ID")
+
+    return {
+        "id": order_id,
+        "status": order.get("status"),
+        "environment": "sandbox",
+    }
