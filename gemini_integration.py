@@ -3,7 +3,8 @@ import json
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
-GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
+
+GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent'
 
 
 def gemini_purchase_draft(api_key, user_request, request_fn=None):
