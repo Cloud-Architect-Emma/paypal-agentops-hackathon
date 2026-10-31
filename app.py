@@ -2,7 +2,8 @@
 import json
 import streamlit as st
 from engine import Policy, new_proposal, resolve
-from integrations import paypal_sandbox_order_status, ai_purchase_draft
+from integrations import paypal_sandbox_order_status
+from gemini_integration import gemini_purchase_draft
 
 st.set_page_config(page_title='PayPal AgentOps | Trusted Agentic Commerce', page_icon='🛡️', layout='wide')
 st.markdown('''<style>
@@ -91,24 +92,24 @@ with t5:
     st.caption('The integrations below use server-side secrets. Neither can initiate or capture a payment.')
     try:
         secrets = st.secrets
-        openai_key = secrets.get('OPENAI_API_KEY', '')
+        gemini_key = secrets.get('GEMINI_API_KEY', '')
         paypal_id = secrets.get('PAYPAL_SANDBOX_CLIENT_ID', '')
         paypal_secret = secrets.get('PAYPAL_SANDBOX_CLIENT_SECRET', '')
     except Exception:
-        openai_key = paypal_id = paypal_secret = ''
-    st.markdown('#### AI-assisted purchase drafting')
+        gemini_key = paypal_id = paypal_secret = ''
+    st.markdown('#### Gemini AI-assisted purchase drafting')
     request_text = st.text_area('Describe what you want an agent to buy', 'Suggest a suitable office supply purchase under £100.')
-    if st.button('Generate AI suggestion', disabled=not bool(openai_key)):
+    if st.button('Generate AI suggestion', disabled=not bool(gemini_key)):
         try:
-            suggestion = ai_purchase_draft(openai_key, request_text)
+            suggestion = gemini_purchase_draft(gemini_key, request_text)
             st.session_state.ai_suggestion = suggestion
         except Exception:
-            st.error('AI service unavailable. Check server-side API configuration and retry.')
+            st.error('Gemini service unavailable. Check Streamlit logs, API key, model access and free-tier quota.')
     if 'ai_suggestion' in st.session_state:
         st.info(st.session_state.ai_suggestion)
         st.caption('AI output is advisory only. Enter the merchant and amount in Agent proposal; policy and buyer consent still apply.')
-    if not openai_key:
-        st.info('AI integration not configured: add OPENAI_API_KEY to Streamlit app secrets to enable live model responses.')
+    if not gemini_key:
+        st.info('Gemini integration not configured: add GEMINI_API_KEY to Streamlit app secrets to enable live model responses.')
     st.divider()
     st.markdown('#### PayPal sandbox · read-only order status')
     order_id = st.text_input('Existing sandbox order ID', help='An order already created in your separate PayPal sandbox development environment.')
