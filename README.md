@@ -2,7 +2,7 @@
 
 **AI proposes. Policy decides. Humans approve. PayPal Sandbox creates the checkout order.**
 
-[Live demo](https://paypal-agentops-hackathon-eksknbyjh7w4vc8cjb9yiy.streamlit.app/) · [Architecture](docs/ARCHITECTURE.md) · [Demo script](DEMO_SCRIPT.md) · [Devpost description](SUBMISSION_COPY.md) · [MIT License](LICENSE)
+[Live demo](https://paypal-agentops-hackathon-eksknbyjh7w4vc8cjb9yiy.streamlit.app/) · [Screenshot gallery](screenshots/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Demo script](DEMO_SCRIPT.md) · [Devpost description](SUBMISSION_COPY.md) · [MIT License](LICENSE)
 
 ## Problem and solution
 AI-generated purchase suggestions are not permission to spend. PayPal AgentOps demonstrates how buyer-defined spending limits, human approval, and traceable audit events can govern AI-assisted purchases before a PayPal sandbox checkout order is created.
@@ -36,6 +36,9 @@ flowchart TD
  K --> L[Order ID and status + audit]
 ```
 Read [the architecture document](docs/ARCHITECTURE.md) for security boundaries and limitations.
+
+## Screenshots
+Browse the [10 application screenshots](screenshots/README.md) showing the PayPal AgentOps demonstration interface.
 
 ## Local setup
 Requires Python 3.12.
@@ -82,7 +85,7 @@ Example eligible scenario: **£49.99 Office Supplies**, £100 limit, Office Supp
 - `tests/test_engine.py` — unit tests
 - `docs/ARCHITECTURE.md` — architecture and trust boundaries
 - `DEMO_SCRIPT.md` — video walkthrough
-- `screenshots/README.md` — screenshot evidence checklist
+- `screenshots/README.md` — gallery of 10 application screenshots
 
 ## Security and scope
 - **Sandbox only:** no real payments, authorization or capture.
@@ -95,7 +98,7 @@ Example eligible scenario: **£49.99 Office Supplies**, £100 limit, Office Supp
 - This is a hackathon proof of concept, not a production payments platform.
 
 ## Evidence, technology and licence
-Screenshots must be captured from the actual application; see [screenshot checklist](screenshots/README.md). A public YouTube demo is not yet linked. See [demo script](DEMO_SCRIPT.md).
+Browse the [10 application screenshots](screenshots/README.md). A public YouTube demo is not yet linked. See [demo script](DEMO_SCRIPT.md).
 
 Python 3.12 · Streamlit · Google Gemini API · PayPal Sandbox REST API (OAuth2, Orders v2) · unittest · GitHub Actions · Streamlit Community Cloud.
 
