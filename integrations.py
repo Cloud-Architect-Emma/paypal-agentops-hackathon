@@ -1,6 +1,13 @@
-"""Optional sandbox-only PayPal read access and AI-assisted drafting.
-No order creation, capture, authorization, or payment execution endpoints.
+
+"""PayPal Sandbox integration for PayPal AgentOps.
+
+Provides OAuth2 authentication, Orders v2 checkout-order creation,
+and read-only order-status lookup.
+
+Order creation uses the PayPal sandbox environment only.
+This module does not authorize, capture, refund, or transfer funds.
 """
+
 import base64
 import json
 import re
