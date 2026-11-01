@@ -114,7 +114,10 @@ if 'ai_candidate' not in st.session_state:
     st.session_state.ai_candidate = None
 
 with st.sidebar:
-    st.markdown('### 🛡️ AGENTOPS')
+    
+if st.button('🛡️ AGENTOPS', key='go_home', use_container_width=True):
+    st.session_state['agentops_page'] = '◈ Overview'
+    st.rerun()
     st.caption('TRUSTED AGENTIC COMMERCE')
     st.divider()
     st.markdown('**ENVIRONMENT**')
