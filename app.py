@@ -105,10 +105,58 @@ p, label {line-height:1.65}
 [data-testid="stExpander"] summary:focus-visible {
     outline: 2px solid #32d8be !important;
 }
-with st.sidebar:
-    if st.button('🛡️ AGENTOPS', key='go_home', use_container_width=True):
-        st.session_state['agentops_page'] = '◈ Overview'
-        st.rerun()
+
+/* AGENTOPS home: original large shield/heading styling, but clickable. */
+[data-testid="stSidebar"] .st-key-go_home button {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    color: #f2fbff !important;
+    -webkit-text-fill-color: #f2fbff !important;
+    padding: 6px 0 !important;
+    min-height: 42px !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+}
+[data-testid="stSidebar"] .st-key-go_home button p {
+    color: #f2fbff !important;
+    -webkit-text-fill-color: #f2fbff !important;
+    font: 800 22px/1.3 'Manrope', sans-serif !important;
+}
+[data-testid="stSidebar"] .st-key-go_home button:hover {
+    background: #123147 !important;
+}
+[data-testid="stSidebar"] .st-key-go_home button:focus-visible {
+    outline: 2px solid #32d8be !important;
+}
+/* Keep the navigation in the original dark-themed visual family. */
+[data-testid="stRadio"] [role="radiogroup"] {gap: 8px; flex-wrap: wrap;}
+[data-testid="stRadio"] [role="radiogroup"] label {
+    border: 1px solid #294b60 !important;
+    background: #102b40 !important;
+    border-radius: 11px !important;
+    padding: 8px 12px !important;
+}
+[data-testid="stRadio"] [role="radiogroup"] label p {
+    color: #eaf3fa !important;
+    -webkit-text-fill-color: #eaf3fa !important;
+}
+[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
+    background: #155267 !important;
+    border-color: #32d8be !important;
+}
+/* The expander header must never become white with white text. */
+[data-testid="stExpander"] details > summary,
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+    background: #102b40 !important;
+    color: #f2fbff !important;
+}
+[data-testid="stExpander"] summary *,
+[data-testid="stExpander"] summary p {
+    color: #f2fbff !important;
+    -webkit-text-fill-color: #f2fbff !important;
+}
 
 </style>""",unsafe_allow_html=True)
 
@@ -123,8 +171,6 @@ with st.sidebar:
         st.session_state['agentops_page'] = '◈ Overview'
         st.rerun()
 
-    st.caption('TRUSTED AGENTIC COMMERCE')
-    st.divider()
     st.caption('TRUSTED AGENTIC COMMERCE')
     st.divider()
     st.markdown('**ENVIRONMENT**')
@@ -151,12 +197,18 @@ st.title('Trusted Agentic Commerce')
 st.caption('AI-assisted purchasing · Buyer policy enforcement · Human-in-the-loop approval')
 st.markdown('<div class="safe-banner">🔒 SANDBOX ONLY &nbsp;·&nbsp; Explicit buyer confirmation required &nbsp;·&nbsp; No authorization, captures or transfers</div>',unsafe_allow_html=True)
 
-t0,t1,t2,t3,t4,t5 = st.tabs([
-    '◈ Overview', '01 · Proposals', '02 · Approvals', '03 · Audit trail',
-    '04 · Architecture', '05 · AI + PayPal'
-])
+pages = [
+    '◈ Overview', '01 · Proposals', '02 · Approvals',
+    '03 · Audit trail', '04 · Architecture', '05 · AI + PayPal',
+]
+if st.session_state.get('agentops_page') not in pages:
+    st.session_state['agentops_page'] = pages[0]
+page = st.radio(
+    'Navigate AgentOps', pages, horizontal=True,
+    key='agentops_page', label_visibility='collapsed',
+)
 
-with t0:
+if page == pages[0]:
     st.markdown("""<div class="hero">
       <div class="hero-kicker">THE COMMERCE TRUST LAYER</div>
       <div class="hero-title">Give AI the ability to propose.<br>Keep people in control.</div>
@@ -188,7 +240,7 @@ with t0:
         st.info('No activity yet. Open **01 · Proposals** to create your first purchase request, or **05 · AI + PayPal** to generate one with Gemini.')
     st.caption('Session-only audit history · Sandbox orders are not payments · No real money moves')
 
-with t1:
+if page == pages[1]:
     st.markdown('<div class="section-kicker">PURCHASE INTELLIGENCE</div>',unsafe_allow_html=True)
     st.subheader('Create a purchase proposal')
     st.caption('Manual simulation is available here. For a live Gemini-generated proposal, use tab 05.')
@@ -208,7 +260,7 @@ with t1:
         st.session_state.latest_proposal_id = tx['id']
         st.rerun()
 
-with t2:
+if page == pages[2]:
     st.markdown('<div class="section-kicker">BUYER CONTROL</div>',unsafe_allow_html=True)
     st.subheader('Human-in-the-loop approval')
     latest_id = st.session_state.get('latest_proposal_id')
@@ -283,7 +335,7 @@ with t2:
     if not (sandbox_id and sandbox_secret):
         st.info('Set PAYPAL_SANDBOX_CLIENT_ID and PAYPAL_SANDBOX_CLIENT_SECRET in Streamlit secrets.')
 
-with t3:
+if page == pages[3]:
     st.markdown('<div class="section-kicker">TRANSACTION OBSERVABILITY</div>',unsafe_allow_html=True)
     st.subheader('Explainable transaction decisions')
     txs = st.session_state.txs
@@ -309,7 +361,7 @@ with t3:
                 st.dataframe(tx['events'], use_container_width=True, hide_index=True)
             st.download_button('Download this audit record (JSON)', json.dumps(tx, indent=2), file_name=tx['id'] + '.json', mime='application/json', key='download_' + tx['id'])
 
-with t4:
+if page == pages[4]:
     st.markdown('<div class="section-kicker">SYSTEM DESIGN</div>',unsafe_allow_html=True)
     st.subheader('Architecture and integration boundaries')
     st.caption('A layered trust boundary separates AI recommendations, deterministic decisions and sandbox API access.')
@@ -327,7 +379,7 @@ with t4:
 **Security boundary:** Gemini cannot approve purchases or change the policy. AI-generated categories are not verified merchant identities, and the approval is only simulated. No capture or authorization service is connected.''')
     st.caption('Designed for a truthful, safe hackathon demonstration—not a production payment system.')
 
-with t5:
+if page == pages[5]:
     st.markdown('<div class="section-kicker">LIVE INTEGRATIONS</div>',unsafe_allow_html=True)
     st.subheader('Live Gemini → policy evaluation → buyer approval')
     st.caption('Gemini proposes; your policy decides; only a human can approve. No payment is executed.')
