@@ -83,6 +83,29 @@ p, label {line-height:1.65}
     opacity: 1 !important;
 }
 
+
+/* Audit trail: dark headers with readable white text */
+[data-testid="stExpander"] details,
+[data-testid="stExpander"] summary {
+    background-color: #102b40 !important;
+    color: #ffffff !important;
+}
+
+[data-testid="stExpander"] summary *,
+[data-testid="stExpander"] summary p,
+[data-testid="stExpander"] summary svg {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+[data-testid="stExpander"] summary:hover {
+    background-color: #19445a !important;
+}
+
+[data-testid="stExpander"] summary:focus-visible {
+    outline: 2px solid #32d8be !important;
+}
+
 </style>""",unsafe_allow_html=True)
 
 if 'txs' not in st.session_state:
