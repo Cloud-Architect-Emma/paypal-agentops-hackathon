@@ -44,6 +44,45 @@ p, label {line-height:1.65}
 .flow-node strong{display:block;color:#f5fcff;font-size:15px;margin:8px 0}.flow-node span{color:#a8c6d5;font-size:12px}
 .safe-banner{background:#0d3540;border:1px solid #237b75;border-radius:12px;padding:13px 17px;color:#b8f2e8;font-size:13px;margin:14px 0 22px}
 @media(max-width:760px){.hero{padding:23px}.hero-title{font-size:28px}.block-container{padding-top:1rem}}
+
+/* Explicit contrast for text fields, including BaseWeb inner controls. */
+
+/* High-contrast, visible typing controls across Streamlit/BaseWeb versions. */
+[data-testid="stTextArea"] textarea,
+[data-testid="stTextInput"] input,
+[data-testid="stNumberInput"] input,
+[data-baseweb="textarea"] textarea,
+[data-baseweb="input"] input {
+    background: #ffffff !important;
+    color: #10283c !important;
+    -webkit-text-fill-color: #10283c !important;
+    caret-color: #10283c !important;
+    opacity: 1 !important;
+    font-size: 16px !important;
+}
+[data-testid="stTextArea"] [data-baseweb="textarea"],
+[data-testid="stTextInput"] [data-baseweb="input"],
+[data-testid="stNumberInput"] [data-baseweb="input"],
+[data-baseweb="textarea"] > div,
+[data-baseweb="input"] > div {
+    background-color: #ffffff !important;
+}
+[data-testid="stTextArea"] textarea:focus,
+[data-testid="stTextInput"] input:focus,
+[data-testid="stNumberInput"] input:focus,
+[data-baseweb="textarea"] textarea:focus,
+[data-baseweb="input"] input:focus {
+    outline: 2px solid #32d8be !important;
+    outline-offset: 1px !important;
+    caret-color: #10283c !important;
+}
+[data-baseweb="textarea"] textarea::placeholder,
+[data-baseweb="input"] input::placeholder {
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    opacity: 1 !important;
+}
+
 </style>""",unsafe_allow_html=True)
 
 if 'txs' not in st.session_state:
