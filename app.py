@@ -158,30 +158,50 @@ p, label {line-height:1.65}
     -webkit-text-fill-color: #f2fbff !important;
 }
 
-/* Reset demo session button — dark theme */
+/* All interactive sidebar controls: dark, readable and no white glare. */
 [data-testid="stSidebar"] .stButton button {
-    background-color: #102b40 !important;
-    color: #ffffff !important;
+    background: #102b40 !important;
+    color: #f2fbff !important;
+    -webkit-text-fill-color: #f2fbff !important;
     border: 1px solid #31576a !important;
     box-shadow: none !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    white-space: normal !important;
+    height: auto !important;
+    min-height: 42px !important;
 }
-
 [data-testid="stSidebar"] .stButton button p {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    color: #f2fbff !important;
+    -webkit-text-fill-color: #f2fbff !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
 }
-
 [data-testid="stSidebar"] .stButton button:hover {
-    background-color: #19445a !important;
-    color: #ffffff !important;
+    background: #19445a !important;
     border-color: #32d8be !important;
+    box-shadow: none !important;
 }
-
 [data-testid="stSidebar"] .stButton button:focus-visible {
     outline: 2px solid #32d8be !important;
     box-shadow: none !important;
 }
-
+/* AGENTOPS logo retains its original large appearance. */
+[data-testid="stSidebar"] .st-key-go_home button {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 6px 0 !important;
+}
+[data-testid="stSidebar"] .st-key-go_home button p {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    font: 800 22px/1.3 'Manrope', sans-serif !important;
+}
+[data-testid="stSidebar"] .st-key-go_home button:hover {
+    background: #123147 !important;
+    border: 0 !important;
+}
 
 </style>""",unsafe_allow_html=True)
 
@@ -191,30 +211,61 @@ if 'ai_candidate' not in st.session_state:
     st.session_state.ai_candidate = None
 
 
+def open_page(page_name):
+    st.session_state['agentops_page'] = page_name
+
+
+def run_demo(merchant, amount, description, destination):
+    """Run the same deterministic policy engine as manual proposals."""
+    demo_policy = Policy(100.0, ('Office Supplies', 'Cloud Tools'))
+    tx = new_proposal(merchant, amount, description, demo_policy)
+    st.session_state.txs.insert(0, tx)
+    st.session_state.latest_proposal_id = tx['id']
+    open_page(destination)
+
+
 with st.sidebar:
     if st.button('🛡️ AGENTOPS', key='go_home', use_container_width=True):
-        st.session_state['agentops_page'] = '◈ Overview'
+        open_page('◈ Overview')
         st.rerun()
 
     st.caption('TRUSTED AGENTIC COMMERCE')
     st.divider()
     st.markdown('**ENVIRONMENT**')
-    st.success('● PayPal Sandbox')
+    if st.button('● PayPal Sandbox', key='sidebar_environment', use_container_width=True):
+        open_page('05 · AI + PayPal')
+        st.rerun()
+
     st.markdown('**EXECUTION POLICY**')
-    st.info('Order creation only\n\nNo captures or transfers')
+    if st.button('🛡 Order creation only · No captures or transfers', key='sidebar_policy', use_container_width=True):
+        open_page('04 · Architecture')
+        st.rerun()
+
     st.divider()
     st.markdown('**DEMO SCENARIOS**')
-    st.caption('✓ £49.99 Office Supplies — approval required')
-    st.caption('⊘ £150 Office Supplies — blocked')
-    st.caption('⊘ Unknown Merchant — blocked')
+    if st.button('✓ £49.99 Office Supplies — approval required', key='demo_approved', use_container_width=True):
+        run_demo('Office Supplies', 49.99, 'Demo: purchase office supplies', '02 · Approvals')
+        st.rerun()
+
+    if st.button('⊘ £150 Office Supplies — blocked', key='demo_amount_blocked', use_container_width=True):
+        run_demo('Office Supplies', 150.0, 'Demo: purchase exceeds the £100 limit', '03 · Audit trail')
+        st.rerun()
+
+    if st.button('⊘ Unknown Merchant — blocked', key='demo_merchant_blocked', use_container_width=True):
+        run_demo('Unknown Merchant', 49.99, 'Demo: merchant category not approved', '03 · Audit trail')
+        st.rerun()
+
     st.divider()
-    st.caption('Data lives in this Streamlit session. Reloading or resetting the session may clear history.')
-    if st.button('↺ Reset demo session', use_container_width=True):
+    st.caption('Data lives in this Streamlit session. Reset clears local demo history, not PayPal sandbox orders.')
+    if st.button('↺ Reset demo session', key='reset_demo_session', use_container_width=True):
         st.session_state.txs = []
         st.session_state.ai_candidate = None
-        st.session_state.pop('ai_suggestion', None)
-        st.session_state.pop('submission_notice', None)
-        st.session_state.pop('latest_proposal_id', None)
+        for key in ('ai_suggestion', 'submission_notice', 'latest_proposal_id', 'sandbox_order_choice'):
+            st.session_state.pop(key, None)
+        for key in list(st.session_state.keys()):
+            if key.startswith(('consent_', 'order_consent_')):
+                del st.session_state[key]
+        open_page('◈ Overview')
         st.rerun()
 
 st.markdown('<div class="hero-kicker">PAYPAL AGENTOPS / CONTROL PLANE</div>', unsafe_allow_html=True)
@@ -389,6 +440,15 @@ if page == pages[3]:
 if page == pages[4]:
     st.markdown('<div class="section-kicker">SYSTEM DESIGN</div>',unsafe_allow_html=True)
     st.subheader('Architecture and integration boundaries')
+    st.markdown('### Execution policy')
+    st.info('PayPal Sandbox checkout orders are created only after policy evaluation, simulated buyer approval, and a separate explicit confirmation.')
+    st.markdown("""**Sidebar demo policy:** £100 maximum per proposal. Approved categories: Office Supplies and Cloud Tools.
+
+**Blocked requests:** Amounts above £100 or merchant categories outside the allowlist.
+
+**Payment restrictions:** No authorization, capture, refund, or transfer operations are implemented.
+
+**Audit:** Proposal and decision events are recorded in the current Streamlit session, not a persistent database.""")
     st.caption('A layered trust boundary separates AI recommendations, deterministic decisions and sandbox API access.')
     stages=[('✦','Gemini AI','Structured proposal'),('▣','Validation','Schema + amount'),('🛡','Policy engine','Limit + allowlist'),('✓','Buyer review','Approve / reject'),('◎','PayPal Sandbox','Create order only')]
     columns=st.columns(5)
