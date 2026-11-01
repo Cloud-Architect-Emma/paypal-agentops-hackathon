@@ -158,6 +158,31 @@ p, label {line-height:1.65}
     -webkit-text-fill-color: #f2fbff !important;
 }
 
+/* Reset demo session button — dark theme */
+[data-testid="stSidebar"] .stButton button {
+    background-color: #102b40 !important;
+    color: #ffffff !important;
+    border: 1px solid #31576a !important;
+    box-shadow: none !important;
+}
+
+[data-testid="stSidebar"] .stButton button p {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] .stButton button:hover {
+    background-color: #19445a !important;
+    color: #ffffff !important;
+    border-color: #32d8be !important;
+}
+
+[data-testid="stSidebar"] .stButton button:focus-visible {
+    outline: 2px solid #32d8be !important;
+    box-shadow: none !important;
+}
+
+
 </style>""",unsafe_allow_html=True)
 
 if 'txs' not in st.session_state:
