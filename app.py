@@ -105,6 +105,10 @@ p, label {line-height:1.65}
 [data-testid="stExpander"] summary:focus-visible {
     outline: 2px solid #32d8be !important;
 }
+with st.sidebar:
+    if st.button('🛡️ AGENTOPS', key='go_home', use_container_width=True):
+        st.session_state['agentops_page'] = '◈ Overview'
+        st.rerun()
 
 </style>""",unsafe_allow_html=True)
 
