@@ -1,4 +1,4 @@
-# PayPal AgentOps — Screenshot Gallery
+# PayPal AgentOps Screenshot Gallery
 
 Ten screenshots from the PayPal AgentOps demonstration, shown in the original upload order. Captions are numbered rather than assigning unverified screen names.
 
