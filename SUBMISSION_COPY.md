@@ -1,7 +1,7 @@
 # PayPal AgentOps Devpost Submission Copy
 
 ## Project name
-PayPal AgentOps — The Control Plane for Trusted Agentic Commerce
+PayPal AgentOps: The Control Plane for Trusted Agentic Commerce
 
 ## Elevator pitch
 **AI proposes. Policy decides. Humans approve. PayPal Sandbox creates the checkout order.**
