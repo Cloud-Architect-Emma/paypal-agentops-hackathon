@@ -1,4 +1,4 @@
-# PayPal AgentOps — Devpost Submission Copy
+# PayPal AgentOps Devpost Submission Copy
 
 ## Project name
 PayPal AgentOps — The Control Plane for Trusted Agentic Commerce
@@ -36,8 +36,7 @@ Persistent tamper-evident audit storage, verified buyer identities, real-time mo
 Sandbox-only MVP. No actual payment capture or transfer, no authenticated buyer approval, no persistent audit database, no real-time monitoring and no production autonomous commerce.
 
 ## Project links
-- Live demo: https://paypal-agentops-hackathon-eksknbyjh7w4vc8cjb9yiy.streamlit.app/
-- Public GitHub: https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon
-- Architecture: https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon/blob/main/docs/ARCHITECTURE.md
-
-**YouTube demo:** Not yet published. Add the actual public URL to Devpost after recording.
+- **Live demo:** https://paypal-agentops-hackathon-eksknbyjh7w4vc8cjb9yiy.streamlit.app/
+- **YouTube demo (Public):** https://youtu.be/7R_1syBF8hc
+- **Public GitHub:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon
+- **Architecture:** https://github.com/Cloud-Architect-Emma/paypal-agentops-hackathon/blob/main/docs/ARCHITECTURE.md
