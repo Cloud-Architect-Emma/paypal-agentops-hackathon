@@ -1,9 +1,7 @@
-PayPal AgentOps The Control Plane for Trusted Agentic Commerce
+PayPal AgentOps — The Control Plane for Trusted Agentic Commerce
 AI proposes. Policy decides. Humans approve. PayPal Sandbox creates the checkout order.
 
-Public YouTube demo · Live demo · [Screenshot gallery](screenshots/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Devpost description](SUBMISSION_COPY.md) · MIT License
-Public video demonstration
-Watch the PayPal AgentOps hackathon demo on YouTube.
+Live demo · YouTube demo · [Screenshot gallery](screenshots/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Devpost description](SUBMISSION_COPY.md) · MIT License
 Problem and solution
 AI-generated purchase suggestions are not permission to spend. PayPal AgentOps demonstrates how buyer-defined spending limits, human approval, and traceable audit events can govern AI-assisted purchases before a PayPal sandbox checkout order is created.
 Implemented features
@@ -52,7 +50,7 @@ Create .streamlit/secrets.toml locally (excluded by .gitignore) or enter these n
 GEMINI_API_KEY = "YOUR_OWN_GEMINI_KEY"
 PAYPAL_SANDBOX_CLIENT_ID = "YOUR_OWN_SANDBOX_CLIENT_ID"
 PAYPAL_SANDBOX_CLIENT_SECRET = "YOUR_OWN_SANDBOX_CLIENT_SECRET"
-These values are intentional configuration examples, not real keys. Obtain a key from Google AI Studio and sandbox credentials from the PayPal Developer Dashboard. Never commit secrets.
+These are configuration examples, not real keys. Obtain a key from Google AI Studio and sandbox credentials from the PayPal Developer Dashboard. Never commit secrets.
 Demo walkthrough
 1. Open 05 · AI + PayPal. Enter a request, generate a Gemini proposal, review and submit it to policy.
 2. A compliant proposal becomes PENDING_APPROVAL; one exceeding the limit or using an unapproved category is BLOCKED.
@@ -80,7 +78,7 @@ Security and scope
 - PayPal-Request-Id and UI checks reduce accidental duplicates, but there is no durable reconciliation store.
 - This is a hackathon proof of concept, not a production payments platform.
 Evidence, technology and licence
-Watch the public YouTube demo, try the live application, and browse the [10 application screenshots](screenshots/README.md).
+Browse the [10 application screenshots](screenshots/README.md) and watch the public YouTube demo.
 
 Python 3.12 · Streamlit · Google Gemini API · PayPal Sandbox REST API (OAuth2, Orders v2) · unittest · GitHub Actions · Streamlit Community Cloud.
 
