@@ -1,4 +1,4 @@
-# PayPal AgentOps — System Architecture
+# PayPal AgentOps System Architecture
 
 ## 1. Overview
 
